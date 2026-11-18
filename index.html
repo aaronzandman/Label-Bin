@@ -53,12 +53,28 @@ button.primary{background:var(--bin);border-color:var(--bin);color:var(--panel)}
 #scan{flex:1;min-width:0;font:500 24px var(--f-mono);padding:14px 16px;border:2px solid var(--bin);border-radius:8px;background:var(--panel);color:var(--ink)}
 .hint{color:var(--muted);font-size:13px;margin-top:6px}
 .hint code{font-family:var(--f-mono);font-size:12px}
-#offline{margin-top:12px;padding:12px 16px;border-radius:8px;background:var(--bad-soft);color:var(--ink);border:1px solid var(--bad)}
-#offline p{margin:0 0 6px;font-weight:600;color:var(--bad)} #offline p:last-child{margin:6px 0 0;font-weight:400;color:var(--ink)}
-#offline ol{margin:0;padding-left:22px} #offline li{margin:3px 0}
-#offline a,a.dl{color:var(--bin);font-weight:600}
-#offline code{font-family:var(--f-mono);font-size:13px}
-a.dl{font-size:14px;text-decoration:underline;text-underline-offset:2px}
+.batchbox{margin-top:22px}
+.batchhead{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.batchhead h2{margin:0}
+.count{font:500 14px var(--f-body);color:var(--muted);text-transform:none;letter-spacing:0;margin-left:6px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.after{margin-top:10px;padding:10px 12px;border:1px solid var(--ok);background:var(--ok-soft);border-radius:8px;font-weight:600;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.batchbox .tbl{margin-top:8px}
+td .sub{display:block;color:var(--muted);font:500 12px var(--f-mono)}
+input.qty{width:58px;font:500 15px var(--f-mono);padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--ink);text-align:right}
+input.tagin{width:100%;max-width:220px;font:500 14px var(--f-mono);padding:5px 7px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--ink)}
+.howto{margin-top:10px;font-size:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 14px}
+.howto summary{cursor:pointer;font-weight:600}
+.howto ol{padding-left:22px;margin:8px 0} .howto li{margin:3px 0}
+.howto a{color:var(--bin);font-weight:600}
+.unkbox{margin-top:10px}
+#printArea{display:none}
+@media print{
+  @page{margin:0}
+  body{background:#fff!important}
+  .wrap{display:none!important}
+  #printArea{display:block!important;margin:0;color:#000;font:9pt/1.2 "Courier New",monospace;white-space:pre}
+}
 .result{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px;display:grid;grid-template-columns:minmax(220px,auto) 1fr;gap:6px 26px;align-items:start}
 .result.unknown{border-color:var(--bad);background:var(--bad-soft)}
 .bigbin{font:700 clamp(54px,9vw,96px)/0.95 var(--f-display);letter-spacing:.01em;color:var(--bin)}
@@ -87,11 +103,10 @@ td.m{font-family:var(--f-mono);font-size:13px} td.b{font:700 17px var(--f-displa
 <div class="wrap">
   <header>
     <h1>V175 Scan Station</h1>
-    <span id="bridge" class="pill">Connecting…</span>
     <span class="spacer"></span>
-    <label class="tog"><input type="checkbox" id="auto" checked> Print on scan</label>
-    <button id="btnCal" title="Set the Zebra to 35x20 mm direct-thermal gap labels and calibrate">Calibrate printer</button>
-    <button id="btnTest" title="Print the test label (or scan T)">Test label</button>
+    <label class="tog"><input type="checkbox" id="chk" checked> CHECK ME labels for unknown codes</label>
+    <button id="btnCal" title="Add a printer setup + calibration step to the batch">Add printer setup</button>
+    <button id="btnTest" title="Add the test label to the batch (or scan T)">Add test label</button>
   </header>
 
   <section class="load" id="load">
@@ -117,27 +132,51 @@ td.m{font-family:var(--f-mono);font-size:13px} td.b{font:700 17px var(--f-displa
   <div class="scan">
     <input id="scan" autocomplete="off" spellcheck="false" placeholder="Scan or type a material # or serial #" aria-label="Scan input">
   </div>
-  <div class="hint">Material # <code>18000376</code>, serial # <code>CNC41931WD</code>, a printed label <code>18000376|1</code>, or <code>5*18000376</code> for 5 labels. Type <code>T</code> for a test label.</div>
-  <div id="offline" hidden>
-    <p>The print bridge isn't running on this computer, so labels can't print yet.</p>
-    <p>Start the print bridge and keep its window open. If the browser asks to let this site access devices on your local network, choose <b>Allow</b>. This page reconnects by itself. The Zebra must be shared in Windows as <code>ZEBRA</code> (see the <a href="https://github.com/aaronzandman/Label-Bin#set-up-the-zebra-gk420d-once" target="_blank" rel="noopener">printer setup guide</a>).</p>
-  </div>
+  <div class="hint">Material # <code>18000376</code>, serial # <code>CNC41931WD</code>, a printed label <code>18000376|1</code>, or <code>5*18000376</code> for 5 labels. Each scan adds to the batch below. Type <code>T</code> to add a test label, <code>P</code> to print the batch.</div>
 
   <section id="result" class="result" hidden></section>
 
-  <h2 class="sec">Recent scans</h2>
-  <div class="tbl"><table>
-    <thead><tr><th>Time</th><th>Scanned</th><th>Bin</th><th>Part</th><th class="r">Labels</th><th></th></tr></thead>
-    <tbody id="hist"><tr><td colspan="6" style="color:var(--muted)">Nothing scanned yet.</td></tr></tbody>
-  </table></div>
+  <section class="batchbox">
+    <div class="batchhead">
+      <h2 class="sec">Batch <span id="batchCount" class="count"></span></h2>
+      <span class="spacer"></span>
+      <button class="primary" id="btnPrint">Print batch</button>
+      <button id="btnZpl">Download .zpl</button>
+      <button id="btnClear">Clear batch</button>
+    </div>
+    <div id="afterPrint" class="after" hidden>Did every label print? <button id="btnDone" class="primary">Yes, clear the batch</button> <button id="btnKeep">No, keep it</button></div>
+    <div class="tbl"><table>
+      <thead><tr><th>Bin</th><th>Label</th><th>Type</th><th class="r">Copies</th><th></th></tr></thead>
+      <tbody id="batch"></tbody>
+    </table></div>
+    <details class="howto">
+      <summary>How printing works</summary>
+      <ol>
+        <li><b>Print batch</b> opens your browser's print window with the batch as plain ZPL text.</li>
+        <li>Pick the printer named <b>Zebra ZPL</b> (the <i>Generic / Text Only</i> printer on the Zebra's USB port, see the <a href="https://github.com/aaronzandman/Label-Bin#print-through-a-generic--text-only-printer" target="_blank" rel="noopener">setup guide</a>).</li>
+        <li>Under <b>More settings</b>: turn off <b>Headers and footers</b> and set <b>Margins</b> to None. The browser remembers these.</li>
+        <li>Click <b>Print</b>. The text goes to the Zebra unchanged, and the Zebra turns it into labels.</li>
+      </ol>
+      <p>If that ever prints garbled labels, use <b>Download .zpl</b>, open the file in Notepad, and print it to <b>Zebra ZPL</b>.</p>
+    </details>
+  </section>
+
+  <section id="unkWrap" class="unkbox" hidden>
+    <h2 class="sec">Unknown codes</h2>
+    <p class="hint">Codes that didn't match the inventory. Type the material # (or serial #) next to one, and scanning that code works from then on. Saved in this browser.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Scanned code</th><th>Is really</th><th>First seen</th><th></th></tr></thead>
+      <tbody id="unk"></tbody>
+    </table></div>
+  </section>
 </div>
+<pre id="printArea" aria-hidden="true"></pre>
 
 <script>
-const BRIDGE = location.port === '9123' ? '' : 'http://127.0.0.1:9123';
 const SETUP_ZPL = '^XA^MNY^MTD^PON^PW280^LL160^LH0,0^PR3^JUS^XZ~JC';
 const TEST_ZPL = "^XA^PW280^LL160^LH0,0^FO12,17^BXN,7,200,18,18^FH_^FD18000376|1^FS^FO146,4^A0N,26,26^FB130,1,0,L,0^FDD-A1-1^FS^FO146,32^A0N,16,16^FB130,1,0,L,0^FDPatch Cable^FS^FO146,72^A0N,14,14^FB130,1,0,L,0^FDCABLES - NETWORK^FS^FO146,90^A0N,12,12^FB130,2,0,L,0^FDCABLE 7FT CAT5E YELLOW PATCH^FS^FO146,128^A0N,22,22^FB130,1,0,L,0^FD18000376^FS^PQ1^XZ";
 const STORE_KEY = 'v175-scan-station-data';
-let TAGS = {}, SERIALS = {}, ALIAS = {}, BYBIN = {}, BINMAP = {}, LOCS = {}, online = null, unknownMtime = null;
+let TAGS = {}, SERIALS = {}, ALIAS = {}, BYBIN = {}, BINMAP = {}, LOCS = {};
 let RAW = {inv: null, ser: null, invFile: '', serFile: '', loadedAt: ''};
 const $ = id => document.getElementById(id);
 
@@ -209,9 +248,11 @@ function buildItemZpl(r){
   const [mk, md] = makerModel(r);
   return label(`${clean(r.Tag)}|1`, [[4, r.Bin, 26, 'one'], [32, mk, 16, 'one'], [50, md, 20, 'one'], [72, r.Group, 15, 'one'], [90, r.Description, 24, 'desc'], [128, r.Tag, 22, 'one']]);
 }
+// Never shorten a serial: drop the 'SN ' prefix if the full text won't fit at the smallest size.
+function serialText(sn){ sn = clean(sn); return fits('SN ' + sn, MIN_H) ? 'SN ' + sn : sn; }
 function buildSerialZpl(s, r){
   const [mk, md] = makerModel(r);
-  return label(`${clean(r.Tag)}|1`, [[4, r.Bin, 26, 'one'], [32, [mk, md].filter(Boolean).join(' '), 16, 'one'], [50, 'SN ' + clean(s.Serial), 20, 'one'], [72, 'SERIALIZED', 15, 'one'], [90, r.Description, 24, 'desc'], [128, r.Tag, 22, 'one']]);
+  return label(`${clean(r.Tag)}|1`, [[4, r.Bin, 26, 'one'], [32, [mk, md].filter(Boolean).join(' '), 16, 'one'], [50, serialText(s.Serial), 20, 'one'], [72, 'SERIALIZED', 15, 'one'], [90, r.Description, 24, 'desc'], [128, r.Tag, 22, 'one']]);
 }
 function fhEscape(s){ return clean(s).replace(/_/g, '_5F'); }
 function checkMeZpl(code){
@@ -230,7 +271,7 @@ async function loadLayout(){
     for (const r of await get('layout/v175_bins.csv')) BINMAP[r.Material] = r;
     for (const r of await get('layout/v175_locations.csv')) LOCS[r.Bin] = r;
   } catch (e) {
-    showErr('Could not read the layout files (layout/v175_bins.csv). Open this page from GitHub Pages or through the bridge, not by double-clicking the file.');
+    showErr('Could not read the layout files (layout/v175_bins.csv). Open this page from its GitHub Pages address, not by double-clicking the file.');
   }
 }
 
@@ -388,9 +429,9 @@ function renderLoadState(van, noBin){
   if (ready && !nInv) showErr(`No rows for ${van} in the inventory file. Check the van / storage location box.`);
   $('summary').hidden = !(RAW.inv || RAW.ser);
   $('summary').innerHTML = `<span><b>${nInv}</b> parts · <b>${nSer}</b> serials · ${esc(van)}</span><span>Loaded ${esc(RAW.loadedAt)}</span>
-    <button id="btnShowLoad">Load new files</button><button id="btnClear">Forget files on this computer</button>`;
+    <button id="btnShowLoad">Load new files</button><button id="btnForget">Forget files on this computer</button>`;
   $('btnShowLoad').onclick = () => { $('load').hidden = false; };
-  $('btnClear').onclick = () => { RAW = {inv: null, ser: null, invFile: '', serFile: '', loadedAt: ''}; try { localStorage.removeItem(STORE_KEY); } catch (e) {} location.reload(); };
+  $('btnForget').onclick = () => { RAW = {inv: null, ser: null, invFile: '', serFile: '', loadedAt: ''}; try { localStorage.removeItem(STORE_KEY); } catch (e) {} location.reload(); };
 }
 function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify({...RAW, van: $('van').value})); } catch (e) {} }
 function restore(){
@@ -399,29 +440,67 @@ function restore(){
 }
 function showErr(t){ $('loadErr').hidden = !t; $('loadErr').textContent = t; }
 
-/* ---------------- bridge ---------------- */
-async function poll(){
-  try {
-    const st = await (await fetch(BRIDGE + '/status', {cache: 'no-store'})).json();
-    setOnline(true, st.printer);
-    if (st.files && st.files.unknown !== unknownMtime){
-      ALIAS = {};
-      for (const u of parseCSV(await (await fetch(BRIDGE + '/unknown', {cache: 'no-store'})).text())) if (u.Tag) ALIAS[u.Code.toUpperCase()] = u.Tag;
-      unknownMtime = st.files.unknown;
-    }
-  } catch (e) { setOnline(false); }
+/* ---------------- unknown codes (kept in this browser) ---------------- */
+const ALIAS_KEY = 'v175-scan-station-unknown';
+let UNKNOWN = [];   // [{code, tag, seen}]
+function loadUnknown(){ try { UNKNOWN = JSON.parse(localStorage.getItem(ALIAS_KEY) || '[]'); } catch (e) { UNKNOWN = []; } syncAlias(); }
+function saveUnknown(){ try { localStorage.setItem(ALIAS_KEY, JSON.stringify(UNKNOWN)); } catch (e) {} syncAlias(); renderUnknown(); }
+function syncAlias(){ ALIAS = {}; for (const u of UNKNOWN) if (u.tag) ALIAS[u.code.toUpperCase()] = u.tag.trim(); }
+function logUnknown(code){ if (!UNKNOWN.some(u => u.code.toUpperCase() === code.toUpperCase())){ UNKNOWN.unshift({code, tag: '', seen: new Date().toLocaleString()}); saveUnknown(); } }
+function renderUnknown(){
+  $('unkWrap').hidden = !UNKNOWN.length;
+  $('unk').innerHTML = UNKNOWN.map((u, i) => `<tr><td class="m">${esc(u.code)}</td><td><input type="text" class="tagin" data-u="${i}" value="${esc(u.tag)}" placeholder="material # or serial #" aria-label="Material for ${esc(u.code)}"></td><td>${esc(u.seen)}</td><td><button data-ud="${i}">Remove</button></td></tr>`).join('');
+  $('unk').querySelectorAll('[data-u]').forEach(inp => inp.onchange = () => { UNKNOWN[+inp.dataset.u].tag = inp.value.trim(); saveUnknown(); });
+  $('unk').querySelectorAll('[data-ud]').forEach(b => b.onclick = () => { UNKNOWN.splice(+b.dataset.ud, 1); saveUnknown(); });
 }
-function setOnline(on, printer){
-  if (on === online) return; online = on;
-  $('bridge').className = 'pill ' + (on ? 'on' : 'off');
-  $('bridge').textContent = on ? `Printer ready · ${printer}` : 'Printer bridge offline';
-  $('offline').hidden = on;
+
+/* ---------------- batch ---------------- */
+const BATCH_KEY = 'v175-scan-station-batch';
+let BATCH = [];   // [{key, kind, bin, title, sub, zpl, copies}]
+function loadBatch(){ try { BATCH = JSON.parse(localStorage.getItem(BATCH_KEY) || '[]'); } catch (e) { BATCH = []; } }
+function saveBatch(){ try { localStorage.setItem(BATCH_KEY, JSON.stringify(BATCH)); } catch (e) {} renderBatch(); }
+function addToBatch(item, copies = 1){
+  const hit = BATCH.find(b => b.key === item.key);
+  if (hit) hit.copies = Math.min(99, hit.copies + copies);
+  else BATCH.push({...item, copies: Math.min(99, copies)});
+  saveBatch();
+  return hit ? hit.copies : copies;
 }
-async function sendPrint(zpl, meta){
-  try {
-    const r = await fetch(BRIDGE + '/print', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({zpl, ...meta})});
-    return (await r.json()).ok;
-  } catch (e) { setOnline(false); return false; }
+const itemEntry = (t, s) => s
+  ? {key: 'S:' + s.Serial, kind: 'Serial', bin: t.Bin, title: t.Description, sub: `${t.Tag} · SN ${s.Serial}`, zpl: buildSerialZpl(s, t)}
+  : {key: 'M:' + t.Tag, kind: 'Item', bin: t.Bin, title: t.Description, sub: t.Tag, zpl: buildItemZpl(t)};
+const totalLabels = () => BATCH.filter(b => b.kind !== 'Setup').reduce((a, b) => a + b.copies, 0);
+function batchZpl(){
+  // Printer setup first, then every label; ^PQ1 per label, repeated for copies.
+  const order = [...BATCH.filter(b => b.kind === 'Setup'), ...BATCH.filter(b => b.kind !== 'Setup')];
+  return order.flatMap(b => Array(b.kind === 'Setup' ? 1 : b.copies).fill(b.zpl)).join('');
+}
+// One field per line (^FO ... ^FS kept together), each well under a printed line's width, so nothing wraps.
+const zplLines = z => z.replace(/(\^XA|\^FO|~)/g, '\n$1').replace(/\^XZ/g, '^XZ\n').replace(/\n{2,}/g, '\n').replace(/^\n/, '');
+function renderBatch(){
+  const n = totalLabels();
+  $('batchCount').textContent = n ? `${n} label${n > 1 ? 's' : ''}` : 'empty';
+  $('btnPrint').disabled = $('btnZpl').disabled = $('btnClear').disabled = !BATCH.length;
+  $('btnPrint').textContent = BATCH.length ? `Print batch (${n} label${n === 1 ? '' : 's'})` : 'Print batch';
+  $('batch').innerHTML = BATCH.length ? BATCH.map((b, i) => `<tr>
+      <td class="b">${esc(b.bin)}</td><td>${esc(b.title)}<span class="sub">${esc(b.sub)}</span></td><td>${esc(b.kind)}</td>
+      <td class="r">${b.kind === 'Setup' ? '1' : `<input type="number" class="qty" min="1" max="99" value="${b.copies}" data-q="${i}" aria-label="Copies">`}</td>
+      <td><button data-rm="${i}">Remove</button></td></tr>`).join('')
+    : '<tr><td colspan="5" style="color:var(--muted)">Scan parts to add their labels here, then print them all at once.</td></tr>';
+  $('batch').querySelectorAll('[data-q]').forEach(inp => inp.onchange = () => { BATCH[+inp.dataset.q].copies = Math.max(1, Math.min(99, +inp.value || 1)); saveBatch(); });
+  $('batch').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { BATCH.splice(+b.dataset.rm, 1); saveBatch(); $('scan').focus(); });
+}
+function printBatch(){
+  if (!BATCH.length) return;
+  $('printArea').textContent = zplLines(batchZpl());
+  window.print();
+}
+function downloadZpl(){
+  if (!BATCH.length) return;
+  const blob = new Blob([zplLines(batchZpl()).replace(/\n/g, '\r\n')], {type: 'text/plain'});
+  const d = new Date(), stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `V175-labels-${stamp}.zpl`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
 /* ---------------- scan handling ---------------- */
@@ -442,44 +521,39 @@ function resolve(raw){
   if (!hit && ALIAS[s.toUpperCase()]) hit = look(ALIAS[s.toUpperCase()]);
   return {code: s, copies, hit};
 }
-const zplFor = (tag, serial) => serial ? buildSerialZpl(serial, tag) : buildItemZpl(tag);
 
 let lastScan = '', lastAt = 0;
-async function handle(raw){
+function handle(raw){
   const cmd = raw.trim().toUpperCase();
-  if (cmd === 'T') return printTest();
+  if (cmd === 'T') return addTest();
+  if (cmd === 'P') return printBatch();
   if (!raw.trim()) return;
-  if (raw === lastScan && Date.now() - lastAt < 800) return;
+  if (raw === lastScan && Date.now() - lastAt < 800) return;   // scanner double-send
   lastScan = raw; lastAt = Date.now();
   if (!Object.keys(TAGS).length){ showNote('Load the inventory files first, then scan.'); $('load').hidden = false; return; }
 
   const res = resolve(raw);
   if (!res.hit){
-    beep(); showUnknown(res.code);
-    fetch(BRIDGE + '/save', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({file: 'unknown', code: res.code})}).catch(() => {});
-    const again = () => sendPrint(checkMeZpl(res.code), {kind: 'CHECKME', scanned: raw, tag: '', serial: '', copies: 1});
-    let printed = false;
-    if ($('auto').checked) printed = await again();
-    setMsg(printed ? 'Printed a CHECK ME label. Logged in the bridge\'s unknown_scans.csv: put the material # in its Tag column and rescan.' : 'Logged in unknown_scans.csv. Put the material # in its Tag column and rescan.', printed);
-    return addHist(raw, null, 'Unknown', printed ? 1 : 0, again);
+    beep(); logUnknown(res.code); showUnknown(res.code);
+    if ($('chk').checked){ addToBatch({key: 'U:' + res.code, kind: 'Check me', bin: '—', title: 'Unknown code', sub: res.code, zpl: checkMeZpl(res.code)}); setMsg('Added a CHECK ME label to the batch. Type the material # next to this code under Unknown codes, then rescan.', null); }
+    else setMsg('Listed under Unknown codes. Type the material # next to it, then rescan.', null);
+    return;
   }
   const {tag} = res.hit; let {serial} = res.hit;
   const sers = Object.values(SERIALS).filter(s => s.Tag === tag.Tag);
   if (!serial && sers.length === 1) serial = sers[0];
   show(tag, serial, sers);
-  const doPrint = () => sendPrint(zplFor(tag, serial), {kind: serial ? 'SERIAL' : 'ITEM', scanned: raw, tag: tag.Tag, serial: serial ? serial.Serial : '', copies: res.copies});
-  if (sers.length > 1 && !serial){
-    setMsg(`Serialized part with ${sers.length} units. Tap a serial to print its label, or scan the serial number.`, null);
-    return addHist(raw, tag, tag.Description, 0, null);
-  }
-  let ok = false;
-  if ($('auto').checked){ ok = await doPrint(); setMsg(ok ? `Printed ${res.copies} label${res.copies > 1 ? 's' : ''}.` : 'Label did not print. Check the bridge window and that the Zebra is on.', ok); }
-  else setMsg('Print on scan is off. Use Reprint below to print.', null);
-  addHist(raw, tag, serial ? `${tag.Description} · SN ${serial.Serial}` : tag.Description, ok ? res.copies : 0, doPrint);
+  if (sers.length > 1 && !serial) return setMsg(`Serialized part with ${sers.length} units. Tap a serial to add its label, or scan the serial number.`, null);
+  const n = addToBatch(itemEntry(tag, serial), res.copies);
+  setMsg(`Added to batch${n > res.copies ? ` (now ${n} of this label)` : res.copies > 1 ? ` (${res.copies} labels)` : ''}.`, true);
 }
-async function printTest(){
-  const ok = await sendPrint(TEST_ZPL, {kind: 'TEST', scanned: 'T', tag: '18000376', serial: '', copies: 1});
-  showNote(ok ? 'Test label sent (material 18000376). Scan it: once your inventory is loaded this page should show bin D-A1-1.' : 'Test label did not print. Check the bridge window and the printer.');
+function addTest(){
+  addToBatch({key: 'TEST', kind: 'Test', bin: 'D-A1-1', title: 'Test label', sub: '18000376', zpl: TEST_ZPL});
+  showNote('Test label added to the batch. Print the batch, then scan the label: it should show bin D-A1-1.');
+}
+function addSetup(){
+  addToBatch({key: 'SETUP', kind: 'Setup', bin: '—', title: 'Printer setup + calibrate', sub: '35x20 mm gap labels, direct thermal. Prints no label; feeds a few blanks while calibrating', zpl: SETUP_ZPL});
+  showNote('Printer setup added. It runs first when you print the batch: the printer feeds a few blank labels while it calibrates.');
 }
 
 /* ---------------- UI ---------------- */
@@ -500,12 +574,10 @@ function show(t, serial, sers){
       <div class="msg" id="msg"></div>
       ${others.length && t.Bin !== 'NO BIN' ? `<div class="also">Also in <b>${esc(t.Bin)}</b>: ${others.slice(0, 12).map(o => esc(o.Description)).join(' · ')}${others.length > 12 ? ` · +${others.length - 12} more` : ''}</div>` : ''}
     </div>`;
-  $('result').querySelectorAll('[data-sn]').forEach(b => b.onclick = async () => {
+  $('result').querySelectorAll('[data-sn]').forEach(b => b.onclick = () => {
     const s = SERIALS[b.dataset.sn.toUpperCase()];
-    const again = () => sendPrint(zplFor(t, s), {kind: 'SERIAL', scanned: s.Serial, tag: t.Tag, serial: s.Serial, copies: 1});
-    const ok = await again();
-    show(t, s, sers); setMsg(ok ? `Printed label for SN ${s.Serial}.` : 'Label did not print.', ok);
-    addHist(s.Serial, t, `${t.Description} · SN ${s.Serial}`, ok ? 1 : 0, again);
+    addToBatch(itemEntry(t, s));
+    show(t, s, sers); setMsg(`Added label for SN ${s.Serial} to the batch.`, true);
     $('scan').focus();
   });
 }
@@ -515,14 +587,6 @@ function showUnknown(code){
 }
 function showNote(t){ $('result').className = 'result'; $('result').hidden = false; $('result').innerHTML = `<div class="desc" style="grid-column:1/-1">${esc(t)}</div>`; }
 function setMsg(t, ok){ const m = $('msg'); if (!m) return; m.textContent = t; m.className = 'msg ' + (ok === true ? 'ok' : ok === false ? 'bad' : ''); }
-
-const hist = [];
-function addHist(scanned, tag, part, n, reprint){
-  hist.unshift({time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'}), scanned, bin: tag ? tag.Bin : '—', part, n, reprint});
-  hist.length = Math.min(hist.length, 25);
-  $('hist').innerHTML = hist.map((h, i) => `<tr><td>${h.time}</td><td class="m">${esc(h.scanned)}</td><td class="b">${esc(h.bin)}</td><td>${esc(h.part)}</td><td class="r">${h.n}</td><td>${h.reprint ? `<button data-i="${i}">Reprint</button>` : ''}</td></tr>`).join('');
-  $('hist').querySelectorAll('[data-i]').forEach(b => b.onclick = async () => { const ok = await hist[+b.dataset.i].reprint(); b.textContent = ok ? 'Printed' : 'Failed'; $('scan').focus(); });
-}
 let actx;
 function beep(){
   try { actx ||= new (window.AudioContext || window.webkitAudioContext)();
@@ -532,12 +596,18 @@ function beep(){
 }
 
 $('scan').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Tab'){ e.preventDefault(); const v = e.target.value; e.target.value = ''; handle(v); } });
-$('btnTest').onclick = () => { printTest(); $('scan').focus(); };
-$('btnCal').onclick = async () => {
-  const ok = await sendPrint(SETUP_ZPL, {kind: 'SETUP', scanned: '', tag: '', serial: '', copies: 1});
-  showNote(ok ? 'Setup sent. The printer feeds a few blank labels while it measures them, then stops on the start of a label. Press Test label next.' : 'Could not reach the printer. Check the bridge window.');
-  $('scan').focus();
+$('btnTest').onclick = () => { addTest(); $('scan').focus(); };
+$('btnCal').onclick = () => { addSetup(); $('scan').focus(); };
+$('btnPrint').onclick = printBatch;
+$('btnZpl').onclick = downloadZpl;
+$('btnClear').onclick = () => {
+  if ($('btnClear').dataset.sure){ BATCH = []; saveBatch(); delete $('btnClear').dataset.sure; $('btnClear').textContent = 'Clear batch'; $('scan').focus(); return; }
+  $('btnClear').dataset.sure = '1'; $('btnClear').textContent = 'Click again to clear';
+  setTimeout(() => { delete $('btnClear').dataset.sure; $('btnClear').textContent = 'Clear batch'; }, 3000);
 };
+window.addEventListener('afterprint', () => { $('afterPrint').hidden = false; });
+$('btnDone').onclick = () => { BATCH = []; saveBatch(); $('afterPrint').hidden = true; $('scan').focus(); };
+$('btnKeep').onclick = () => { $('afterPrint').hidden = true; $('scan').focus(); };
 $('btnPick').onclick = () => $('files').click();
 $('files').onchange = e => { onFiles([...e.target.files]); e.target.value = ''; };
 $('btnHide').onclick = () => { $('load').hidden = true; $('scan').focus(); };
@@ -546,13 +616,13 @@ const zone = $('load');
 ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); zone.hidden = false; zone.classList.add('drag'); }));
 ['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('drag'); }));
 document.addEventListener('drop', e => { if (e.dataTransfer.files.length) onFiles([...e.dataTransfer.files]); });
-document.addEventListener('click', e => { if (!e.target.closest('button,input,label,.load')) $('scan').focus(); });
+document.addEventListener('click', e => { if (!e.target.closest('button,input,label,.load,a')) $('scan').focus(); });
 
 (async () => {
   await loadLayout();
   if (restore()){ build(); if (RAW.inv && RAW.ser) $('load').hidden = true; }
+  loadUnknown(); renderUnknown(); loadBatch(); renderBatch();
   $('scan').focus();
-  poll(); setInterval(poll, 4000);
 })();
 </script>
 </body>
