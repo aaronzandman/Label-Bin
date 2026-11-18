@@ -53,7 +53,12 @@ button.primary{background:var(--bin);border-color:var(--bin);color:var(--panel)}
 #scan{flex:1;min-width:0;font:500 24px var(--f-mono);padding:14px 16px;border:2px solid var(--bin);border-radius:8px;background:var(--panel);color:var(--ink)}
 .hint{color:var(--muted);font-size:13px;margin-top:6px}
 .hint code{font-family:var(--f-mono);font-size:12px}
-#offline{margin-top:12px;padding:12px 14px;border-radius:8px;background:var(--bad-soft);color:var(--bad);font-weight:600}
+#offline{margin-top:12px;padding:12px 16px;border-radius:8px;background:var(--bad-soft);color:var(--ink);border:1px solid var(--bad)}
+#offline p{margin:0 0 6px;font-weight:600;color:var(--bad)} #offline p:last-child{margin:6px 0 0;font-weight:400;color:var(--ink)}
+#offline ol{margin:0;padding-left:22px} #offline li{margin:3px 0}
+#offline a,a.dl{color:var(--bin);font-weight:600}
+#offline code{font-family:var(--f-mono);font-size:13px}
+a.dl{font-size:14px;text-decoration:underline;text-underline-offset:2px}
 .result{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px;display:grid;grid-template-columns:minmax(220px,auto) 1fr;gap:6px 26px;align-items:start}
 .result.unknown{border-color:var(--bad);background:var(--bad-soft)}
 .bigbin{font:700 clamp(54px,9vw,96px)/0.95 var(--f-display);letter-spacing:.01em;color:var(--bin)}
@@ -85,6 +90,7 @@ td.m{font-family:var(--f-mono);font-size:13px} td.b{font:700 17px var(--f-displa
     <span id="bridge" class="pill">Connecting…</span>
     <span class="spacer"></span>
     <label class="tog"><input type="checkbox" id="auto" checked> Print on scan</label>
+    <a class="dl" href="bridge/Start-V175-Labels.bat" download="Start-V175-Labels.bat">Download print bridge (.bat)</a>
     <button id="btnCal" title="Set the Zebra to 35x20 mm direct-thermal gap labels and calibrate">Calibrate printer</button>
     <button id="btnTest" title="Print the test label (or scan T)">Test label</button>
   </header>
@@ -113,7 +119,15 @@ td.m{font-family:var(--f-mono);font-size:13px} td.b{font:700 17px var(--f-displa
     <input id="scan" autocomplete="off" spellcheck="false" placeholder="Scan or type a material # or serial #" aria-label="Scan input">
   </div>
   <div class="hint">Material # <code>18000376</code>, serial # <code>CNC41931WD</code>, a printed label <code>18000376|1</code>, or <code>5*18000376</code> for 5 labels. Type <code>T</code> for a test label.</div>
-  <div id="offline" hidden>The print bridge on this computer isn't answering. Run <b>bridge\Start-V175-Labels.bat</b> and keep its window open. If the browser asks to let this site reach devices on your local network, choose Allow.</div>
+  <div id="offline" hidden>
+    <p>The print bridge isn't running on this computer, so labels can't print yet.</p>
+    <ol>
+      <li><a href="bridge/Start-V175-Labels.bat" download="Start-V175-Labels.bat">Download Start-V175-Labels.bat</a>. If the browser warns about the file type, choose <b>Keep</b>.</li>
+      <li>Double-click it. If Windows shows "Windows protected your PC", click <b>More info</b> &gt; <b>Run anyway</b>.</li>
+      <li>Keep the black bridge window open. If the browser asks to let this site access devices on your local network, choose <b>Allow</b>.</li>
+    </ol>
+    <p>This page reconnects by itself. The Zebra must be shared in Windows as <code>ZEBRA</code> (see the <a href="https://github.com/aaronzandman/Label-Bin#set-up-the-zebra-gk420d-once" target="_blank" rel="noopener">printer setup guide</a>).</p>
+  </div>
 
   <section id="result" class="result" hidden></section>
 
