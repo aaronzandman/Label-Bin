@@ -90,7 +90,6 @@ td.m{font-family:var(--f-mono);font-size:13px} td.b{font:700 17px var(--f-displa
     <span id="bridge" class="pill">Connecting…</span>
     <span class="spacer"></span>
     <label class="tog"><input type="checkbox" id="auto" checked> Print on scan</label>
-    <a class="dl" href="bridge/Start-V175-Labels.bat" download="Start-V175-Labels.bat">Download print bridge (.bat)</a>
     <button id="btnCal" title="Set the Zebra to 35x20 mm direct-thermal gap labels and calibrate">Calibrate printer</button>
     <button id="btnTest" title="Print the test label (or scan T)">Test label</button>
   </header>
@@ -121,12 +120,7 @@ td.m{font-family:var(--f-mono);font-size:13px} td.b{font:700 17px var(--f-displa
   <div class="hint">Material # <code>18000376</code>, serial # <code>CNC41931WD</code>, a printed label <code>18000376|1</code>, or <code>5*18000376</code> for 5 labels. Type <code>T</code> for a test label.</div>
   <div id="offline" hidden>
     <p>The print bridge isn't running on this computer, so labels can't print yet.</p>
-    <ol>
-      <li><a href="bridge/Start-V175-Labels.bat" download="Start-V175-Labels.bat">Download Start-V175-Labels.bat</a>. If the browser warns about the file type, choose <b>Keep</b>.</li>
-      <li>Double-click it. If Windows shows "Windows protected your PC", click <b>More info</b> &gt; <b>Run anyway</b>.</li>
-      <li>Keep the black bridge window open. If the browser asks to let this site access devices on your local network, choose <b>Allow</b>.</li>
-    </ol>
-    <p>This page reconnects by itself. The Zebra must be shared in Windows as <code>ZEBRA</code> (see the <a href="https://github.com/aaronzandman/Label-Bin#set-up-the-zebra-gk420d-once" target="_blank" rel="noopener">printer setup guide</a>).</p>
+    <p>Start the print bridge and keep its window open. If the browser asks to let this site access devices on your local network, choose <b>Allow</b>. This page reconnects by itself. The Zebra must be shared in Windows as <code>ZEBRA</code> (see the <a href="https://github.com/aaronzandman/Label-Bin#set-up-the-zebra-gk420d-once" target="_blank" rel="noopener">printer setup guide</a>).</p>
   </div>
 
   <section id="result" class="result" hidden></section>

@@ -15,7 +15,6 @@ you load new ones or click **Forget files on this computer**.
 | `index.html` | The scan station page (works on GitHub Pages) |
 | `layout/v175_bins.csv` | Which bin each material number goes in, plus maker / model / part type for the label |
 | `layout/v175_locations.csv` | Bin names and where each bin is in the van |
-| `bridge/Start-V175-Labels.bat` | The print bridge: one self-contained file for the PC with the Zebra (built-in Windows PowerShell, nothing to install). The page has a download link |
 | `v175_TEST_label.zpl` | One test label to print and scan before printing a batch |
 
 ## Files you load in the page (same columns as the SAP exports)
@@ -49,7 +48,7 @@ The GK420d is a **direct thermal** printer: use direct-thermal 35 x 20 mm labels
 3. If Windows asks to turn on file and printer sharing, say yes, for **private** networks only.
 4. Check it: open Command Prompt in the repo folder and run
    `copy /b v175_TEST_label.zpl \\localhost\ZEBRA`
-   A label should print. If you see *"The network name cannot be found"*, the share name isn't exactly `ZEBRA`. (To use a different share name, open `Start-V175-Labels.bat` in Notepad and change the `$Printer` line near the top of the PowerShell part.)
+   A label should print. If you see *"The network name cannot be found"*, the share name isn't exactly `ZEBRA`.
 
 ### 4. Set the label size and calibrate
 Start the bridge (below), open the page, and press **Calibrate printer**. That sends `bridge/zebra_setup.zpl`, which:
@@ -69,18 +68,17 @@ Redo the calibration whenever you load a different label roll, or if a blank lab
 | Print is too light or patchy | Wrong label type (needs direct thermal), or raise darkness in ZDesigner: Printing Preferences > Options > Darkness |
 | Text or barcode cut off on one side | The roll guides are too loose. Slide them against the labels and calibrate |
 | Status light red or flashing | Lid not fully closed, or out of labels |
-| Page shows *Printer bridge offline* | Run `Start-V175-Labels.bat` (download link on the page) and keep its window open |
+| Page shows *Printer bridge offline* | Start the print bridge on this PC and keep its window open |
 
 ## Set up printing (once per PC)
 
 1. Share the Zebra GK420d in Windows as `ZEBRA` (so `\\localhost\ZEBRA` works).
-2. On the page, click **Download print bridge (.bat)**. Double-click the downloaded file and keep its window open.
-   If Windows shows *Windows protected your PC*: **More info** > **Run anyway**. Logs go in a `V175-label-logs` folder next to the .bat.
-3. The bridge opens https://aaronzandman.github.io/Label-Bin/ for you. If Chrome/Edge asks to let the site **access devices on your local network**, choose **Allow**.
+2. Start the print bridge on this PC and keep its window open. (The bridge isn't included in this repo.)
+3. Open https://aaronzandman.github.io/Label-Bin/. If Chrome/Edge asks to let the site **access devices on your local network**, choose **Allow**.
    The badge at the top turns green: *Printer ready*.
 
 The bridge only listens on this computer (`127.0.0.1` / `::1`, port 9123). It prints RAW ZPL with
-`copy /b file.zpl \\localhost\ZEBRA`. The ZPL goes to the printer as-is: the driver only passes it through, and no PDFs or images are involved. Every print is logged in `V175-label-logs/print_log.csv` next to the .bat.
+`copy /b file.zpl \\localhost\ZEBRA`. The ZPL goes to the printer as-is: the driver only passes it through, and no PDFs or images are involved.
 
 ## Before printing a batch
 
@@ -96,7 +94,7 @@ Blank labels between real ones mean the printer needs media recalibration, not a
 | `18000376\|1` (one of these labels) | Reads the material number back out |
 | `5*18000376` | 5 labels |
 | A serialized material with several units | Lists the serials. Tap one, or scan the serial |
-| Unknown code | Beep, a CHECK ME label, and the code is logged once in `V175-label-logs/unknown_scans.csv`. Type a material # in its `Tag` column and the code works on the next scan |
+| Unknown code | Beep, a CHECK ME label, and the code is logged once in the bridge's `unknown_scans.csv`. Type a material # in its `Tag` column and the code works on the next scan |
 
 ## Label (35 x 20 mm, 280 x 160 dots)
 
