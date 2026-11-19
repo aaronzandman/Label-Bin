@@ -1,7 +1,7 @@
 # V175 Bin Finder
 
 Scan a material number or serial number and the page shows, in very large type, which bin of van V175 it goes in.
-Parts are grouped by equipment model into **bins 1-30** (for example bin 1 = Lexmark MS725 / MS823). Serialized units keep
+Parts are grouped by equipment model, one model per bin, in **bins 1-40** (for example bin 1 = Lexmark MS725 / MS823); bins 41-50 are spare. Serialized units keep
 their own spots (locked drawers, green totes, cargo floor).
 Nothing prints and nothing is installed.
 
@@ -14,8 +14,8 @@ you load new ones or click **Forget files on this computer**.
 | Path | What it is |
 |---|---|
 | `index.html` | The bin finder page |
-| `layout/v175_bins.csv` | Which bin each material number goes in (1-30, or a spot code for serialized units), plus maker / model / equipment group |
-| `layout/v175_locations.csv` | What each bin holds (bins 1-30 and the serialized-unit spots) |
+| `layout/v175_bins.csv` | Which bin each material number goes in (1-50, or a spot code for serialized units), plus maker / model / equipment group |
+| `layout/v175_locations.csv` | What each bin holds (bins 1-50 and the serialized-unit spots) |
 
 The page reads the two layout files from the same site, so open it from a web address (for example GitHub Pages),
 not by double-clicking `index.html`.
