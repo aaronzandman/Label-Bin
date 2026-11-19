@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>V175 Scan Station</title>
+<title>V175 Bin Finder</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-/* Layout: inventory status + scan field on top, the answer (which bin) as the biggest thing on screen, recent scans underneath. */
+/* Layout: a slim bar with the scan box, then one huge answer panel (the bin) that fills the screen, recent scans under it. */
 :root{
   --bg:#eef1f3; --panel:#fff; --ink:#1d2328; --muted:#5f6a72; --line:#d5dbe0; --steel:#5d666e;
-  --bin:#0b6fb0; --bin-soft:#d6ecfa; --tote:#1a8a4e; --lock:#b87400; --lock-soft:#fdf0d5;
+  --bin:#0b6fb0; --bin-soft:#d6ecfa; --tote:#1a8a4e; --tote-soft:#dcf3e5; --lock:#a86a00; --lock-soft:#fdf0d5;
   --ok:#1a8a4e; --ok-soft:#dcf3e5; --bad:#c0392b; --bad-soft:#fbe3e0;
   --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --f-body:"Barlow",system-ui,"Segoe UI",sans-serif;
@@ -17,18 +17,16 @@
 }
 @media (prefers-color-scheme:dark){:root{
   --bg:#14181b; --panel:#1c2226; --ink:#e6eaed; --muted:#9aa5ad; --line:#2c343a; --steel:#8e99a2;
-  --bin:#6cc1f5; --bin-soft:#173447; --tote:#4fd18a; --lock:#f0a830; --lock-soft:#3a2c12;
+  --bin:#6cc1f5; --bin-soft:#15303f; --tote:#4fd18a; --tote-soft:#143524; --lock:#f0a830; --lock-soft:#382a10;
   --ok:#4fd18a; --ok-soft:#163a26; --bad:#ff7b6b; --bad-soft:#3d1c18; color-scheme:dark}}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+html,body{min-height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 var(--f-body)}
-.wrap{max-width:1080px;margin:0 auto;padding:18px 20px 40px}
+.wrap{max-width:1400px;margin:0 auto;padding:14px 20px 32px}
 header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
-h1{font:700 30px/1 var(--f-display);margin:0;letter-spacing:.01em}
-.pill{font:600 13px var(--f-body);padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:var(--panel)}
-.pill.on{color:var(--ok);border-color:var(--ok)} .pill.off{color:var(--bad);border-color:var(--bad);background:var(--bad-soft)}
+h1{font:700 26px/1 var(--f-display);margin:0;letter-spacing:.01em}
 .spacer{flex:1}
-label.tog{display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px;cursor:pointer}
 button{font:600 14px var(--f-body);padding:8px 12px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
 button:hover{border-color:var(--steel)} button:focus-visible,input:focus-visible{outline:3px solid var(--bin);outline-offset:1px}
 button.primary{background:var(--bin);border-color:var(--bin);color:var(--panel)}
@@ -48,65 +46,52 @@ button.primary{background:var(--bin);border-color:var(--bin);color:var(--panel)}
 #loadNote{color:var(--muted);font-size:13px;margin-top:8px}
 .summary{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:14px;color:var(--muted)}
 .summary b{color:var(--ink)}
+
+.summary{margin-top:0;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:14px;color:var(--muted)}
+.summary b{color:var(--ink)}
 /* scan */
 .scan{margin-top:12px;display:flex;gap:8px}
-#scan{flex:1;min-width:0;font:500 24px var(--f-mono);padding:14px 16px;border:2px solid var(--bin);border-radius:8px;background:var(--panel);color:var(--ink)}
-.hint{color:var(--muted);font-size:13px;margin-top:6px}
-.hint code{font-family:var(--f-mono);font-size:12px}
-.batchbox{margin-top:22px}
-.batchhead{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-.batchhead h2{margin:0}
-.count{font:500 14px var(--f-body);color:var(--muted);text-transform:none;letter-spacing:0;margin-left:6px}
-button:disabled{opacity:.45;cursor:not-allowed}
-.after{margin-top:10px;padding:10px 12px;border:1px solid var(--ok);background:var(--ok-soft);border-radius:8px;font-weight:600;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.batchbox .tbl{margin-top:8px}
-td .sub{display:block;color:var(--muted);font:500 12px var(--f-mono)}
-input.qty{width:58px;font:500 15px var(--f-mono);padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--ink);text-align:right}
-input.tagin{width:100%;max-width:220px;font:500 14px var(--f-mono);padding:5px 7px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--ink)}
-.howto{margin-top:10px;font-size:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 14px}
-.howto summary{cursor:pointer;font-weight:600}
-.howto ol{padding-left:22px;margin:8px 0} .howto li{margin:3px 0}
-.howto a{color:var(--bin);font-weight:600}
-.unkbox{margin-top:10px}
-#printArea{display:none}
-@media print{
-  @page{margin:0}
-  body{background:#fff!important}
-  .wrap{display:none!important}
-  #printArea{display:block!important;margin:0;color:#000;font:9pt/1.2 "Courier New",monospace;white-space:pre}
-}
-.result{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px;display:grid;grid-template-columns:minmax(220px,auto) 1fr;gap:6px 26px;align-items:start}
-.result.unknown{border-color:var(--bad);background:var(--bad-soft)}
-.bigbin{font:700 clamp(54px,9vw,96px)/0.95 var(--f-display);letter-spacing:.01em;color:var(--bin)}
-.bigbin.tote{color:var(--tote)} .bigbin.lock{color:var(--lock)} .bigbin.bad{color:var(--bad);font-size:clamp(40px,7vw,64px)}
-.binname{font:600 20px var(--f-display);text-transform:uppercase;letter-spacing:.04em;margin-top:6px}
-.where{color:var(--muted);font-size:14px}
-.desc{font:600 22px/1.2 var(--f-body);margin:0 0 6px}
-dl{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;margin:0;font-size:14px}
-dt{color:var(--muted)} dd{margin:0;font-variant-numeric:tabular-nums} dd.m{font-family:var(--f-mono)}
-.msg{margin-top:10px;font-weight:600}
-.msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.chips button{font:500 13px var(--f-mono);background:var(--lock-soft);border-color:var(--lock);padding:5px 8px}
-.chips button.cur{outline:2px solid var(--lock)}
-.also{margin-top:12px;font-size:13px;color:var(--muted)} .also b{color:var(--ink)}
-h2.sec{font:600 18px var(--f-display);text-transform:uppercase;letter-spacing:.06em;margin:26px 0 6px}
+#scan{flex:1;min-width:0;font:500 22px var(--f-mono);padding:12px 16px;border:2px solid var(--bin);border-radius:8px;background:var(--panel);color:var(--ink)}
+/* the answer */
+.answer{margin-top:14px;border-radius:14px;padding:clamp(18px,3vw,40px);background:var(--panel);border:3px solid var(--line);min-height:62vh;display:flex;flex-direction:column;justify-content:center}
+.answer.bin{background:var(--bin-soft);border-color:var(--bin)}
+.answer.tote{background:var(--tote-soft);border-color:var(--tote)}
+.answer.lock{background:var(--lock-soft);border-color:var(--lock)}
+.answer.bad{background:var(--bad-soft);border-color:var(--bad)}
+.eyebrow{font:600 clamp(16px,1.8vw,24px) var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.bigbin{font:700 clamp(56px,20vw,330px)/.88 var(--f-display);letter-spacing:.005em;margin:6px 0 4px;color:var(--bin);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tote .bigbin{color:var(--tote)} .lock .bigbin{color:var(--lock)} .bad .bigbin{color:var(--bad);font-size:clamp(48px,13vw,200px)}
+.binname{font:700 clamp(28px,4vw,56px)/1.05 var(--f-display);text-transform:uppercase;letter-spacing:.02em}
+.where{font:500 clamp(18px,2vw,28px)/1.3 var(--f-body);color:var(--muted);margin-top:4px}
+.part{margin-top:clamp(16px,2.4vw,32px);padding-top:clamp(12px,1.6vw,22px);border-top:2px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 28px;align-items:baseline}
+.part .desc{font:600 clamp(20px,2.4vw,34px)/1.2 var(--f-body);flex:1 1 420px;min-width:0}
+.part .ids{font:500 clamp(15px,1.4vw,20px) var(--f-mono);color:var(--muted)}
+.locked{display:inline-block;margin-top:10px;font:700 clamp(14px,1.3vw,18px) var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--lock);border:2px solid var(--lock);border-radius:6px;padding:2px 10px}
+.also{margin-top:10px;font-size:clamp(13px,1.1vw,16px);color:var(--muted)} .also b{color:var(--ink)}
+.idle{font:700 clamp(40px,6vw,90px)/1 var(--f-display);color:var(--muted);text-align:center}
+.idle small{display:block;font:500 clamp(15px,1.4vw,20px) var(--f-body);margin-top:14px}
+h2.sec{font:600 18px var(--f-display);text-transform:uppercase;letter-spacing:.06em;margin:24px 0 6px}
+.recent{display:flex;flex-wrap:wrap;gap:8px}
+.recent button{display:flex;gap:10px;align-items:baseline;text-align:left;max-width:100%}
+.recent .rb{font:700 20px var(--f-display)} .recent .rd{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
 table{width:100%;border-collapse:collapse;font-size:14px;background:var(--panel)}
 td,th{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
 th{font:600 11px var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
-td.m{font-family:var(--f-mono);font-size:13px} td.b{font:700 17px var(--f-display)} td.r{text-align:right}
+td.m{font-family:var(--f-mono);font-size:13px}
+input.tagin{width:100%;max-width:220px;font:500 14px var(--f-mono);padding:5px 7px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--ink)}
+.hint{color:var(--muted);font-size:13px;margin:0 0 6px}
 .tbl{overflow-x:auto}
-@media (max-width:700px){.result,.slots{grid-template-columns:1fr}}
+:fullscreen .wrap{max-width:none}
+@media (max-width:700px){.slots{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>V175 Scan Station</h1>
+    <h1>V175 Bin Finder</h1>
+    <div class="summary" id="summary" hidden></div>
     <span class="spacer"></span>
-    <label class="tog"><input type="checkbox" id="chk" checked> CHECK ME labels for unknown codes</label>
-    <button id="btnCal" title="Add a printer setup + calibration step to the batch">Add printer setup</button>
-    <button id="btnTest" title="Add the test label to the batch (or scan T)">Add test label</button>
+    <button id="btnFull" title="Fill the whole screen">Full screen</button>
   </header>
 
   <section class="load" id="load">
@@ -118,7 +103,7 @@ td.m{font-family:var(--f-mono);font-size:13px} td.b{font:700 17px var(--f-displa
     </div>
     <div class="loadrow">
       <button class="primary" id="btnPick">Choose files</button>
-      <input type="file" id="files" accept=".xlsx,.xls,.csv" multiple hidden>
+      <input type="file" id="files" accept=".xlsx,.csv" multiple hidden>
       <label for="van">Van / storage location</label><input type="text" id="van" value="V175" maxlength="8">
       <span class="spacer"></span>
       <button id="btnHide" hidden>Done</button>
@@ -127,41 +112,20 @@ td.m{font-family:var(--f-mono);font-size:13px} td.b{font:700 17px var(--f-displa
     <div id="loadNote"></div>
   </section>
 
-  <div class="summary" id="summary" hidden></div>
-
   <div class="scan">
     <input id="scan" autocomplete="off" spellcheck="false" placeholder="Scan or type a material # or serial #" aria-label="Scan input">
   </div>
-  <div class="hint">Material # <code>18000376</code>, serial # <code>CNC41931WD</code>, a printed label <code>18000376|1</code>, or <code>5*18000376</code> for 5 labels. Each scan adds to the batch below. Type <code>T</code> to add a test label, <code>P</code> to print the batch.</div>
 
-  <section id="result" class="result" hidden></section>
-
-  <section class="batchbox">
-    <div class="batchhead">
-      <h2 class="sec">Batch <span id="batchCount" class="count"></span></h2>
-      <span class="spacer"></span>
-      <button class="primary" id="btnPrint">Print batch</button>
-      <button id="btnZpl">Download .zpl</button>
-      <button id="btnClear">Clear batch</button>
-    </div>
-    <div id="afterPrint" class="after" hidden>Did every label print? <button id="btnDone" class="primary">Yes, clear the batch</button> <button id="btnKeep">No, keep it</button></div>
-    <div class="tbl"><table>
-      <thead><tr><th>Bin</th><th>Label</th><th>Type</th><th class="r">Copies</th><th></th></tr></thead>
-      <tbody id="batch"></tbody>
-    </table></div>
-    <details class="howto">
-      <summary>How printing works</summary>
-      <ol>
-        <li><b>Print batch</b> opens your browser's print window with the batch as plain ZPL text.</li>
-        <li>Pick the printer named <b>Zebra ZPL</b> (the <i>Generic / Text Only</i> printer on the Zebra's USB port, see the <a href="https://github.com/aaronzandman/Label-Bin#print-through-a-generic--text-only-printer" target="_blank" rel="noopener">setup guide</a>).</li>
-        <li>Under <b>More settings</b>: turn off <b>Headers and footers</b> and set <b>Margins</b> to None. The browser remembers these.</li>
-        <li>Click <b>Print</b>. The text goes to the Zebra unchanged, and the Zebra turns it into labels.</li>
-      </ol>
-      <p>If that ever prints garbled labels, use <b>Download .zpl</b>, open the file in Notepad, and print it to <b>Zebra ZPL</b>.</p>
-    </details>
+  <section id="answer" class="answer" aria-live="polite">
+    <div class="idle">Scan a part<small>The bin it goes in shows here.</small></div>
   </section>
 
-  <section id="unkWrap" class="unkbox" hidden>
+  <section id="recentWrap" hidden>
+    <h2 class="sec">Recent</h2>
+    <div class="recent" id="recent"></div>
+  </section>
+
+  <section id="unkWrap" hidden>
     <h2 class="sec">Unknown codes</h2>
     <p class="hint">Codes that didn't match the inventory. Type the material # (or serial #) next to one, and scanning that code works from then on. Saved in this browser.</p>
     <div class="tbl"><table>
@@ -170,11 +134,8 @@ td.m{font-family:var(--f-mono);font-size:13px} td.b{font:700 17px var(--f-displa
     </table></div>
   </section>
 </div>
-<pre id="printArea" aria-hidden="true"></pre>
 
 <script>
-const SETUP_ZPL = '^XA^MNY^MTD^PON^PW280^LL160^LH0,0^PR3^JUS^XZ~JC';
-const TEST_ZPL = "^XA^PW280^LL160^LH0,0^FO12,17^BXN,7,200,18,18^FH_^FD18000376|1^FS^FO146,4^A0N,26,26^FB130,1,0,L,0^FDD-A1-1^FS^FO146,32^A0N,16,16^FB130,1,0,L,0^FDPatch Cable^FS^FO146,72^A0N,14,14^FB130,1,0,L,0^FDCABLES - NETWORK^FS^FO146,90^A0N,12,12^FB130,2,0,L,0^FDCABLE 7FT CAT5E YELLOW PATCH^FS^FO146,128^A0N,22,22^FB130,1,0,L,0^FD18000376^FS^PQ1^XZ";
 const STORE_KEY = 'v175-scan-station-data';
 let TAGS = {}, SERIALS = {}, ALIAS = {}, BYBIN = {}, BINMAP = {}, LOCS = {};
 let RAW = {inv: null, ser: null, invFile: '', serFile: '', loadedAt: ''};
@@ -197,72 +158,6 @@ function parseCSV(text){
   return rows.filter(r => r.some(v => v.trim() !== '')).map(r => Object.fromEntries(head.map((h, i) => [h, (r[i] ?? '').trim()])));
 }
 
-/* ---------------- label engine (same layout as tools/build_v175_labels.py) ---------------- */
-const TEXT_X = 146, TEXT_W = 130, CHAR_W = 0.58, MIN_H = 12;
-function clean(s){
-  s = s == null ? '' : String(s);
-  if (/[^\x00-\x7e]/.test(s)) s = s.replace(/[^\x00-\x7f]/g, '?').replace(/\?/g, ' ');
-  return s.replace(/[\^~]/g, ' ').replace(/\s+/g, ' ').trim();
-}
-const fits = (t, h, w = TEXT_W) => t.length * CHAR_W * h <= w;
-function fitOne(t, h){
-  while (h > MIN_H && !fits(t, h)) h--;
-  if (!fits(t, h)) t = t.slice(0, Math.max(1, Math.floor(TEXT_W / (CHAR_W * h)))).trimEnd();
-  return [t, h];
-}
-function wrapLines(t, h){
-  const per = Math.max(1, Math.floor(TEXT_W / (CHAR_W * h)));
-  const lines = []; let cur = '';
-  for (let w of t.split(' ')){
-    while (w.length > per){ if (cur){ lines.push(cur); cur = ''; } lines.push(w.slice(0, per)); w = w.slice(per); }
-    if (!cur) cur = w; else if (cur.length + 1 + w.length <= per) cur += ' ' + w; else { lines.push(cur); cur = w; }
-  }
-  if (cur) lines.push(cur);
-  return lines;
-}
-function fitTwo(t, h = 17){
-  while (h > MIN_H && wrapLines(t, h).length > 2) h--;
-  let lines = wrapLines(t, h);
-  if (lines.length > 2){
-    const per = Math.floor(TEXT_W / (CHAR_W * h));
-    t = lines.slice(0, 2).join(' ').slice(0, per * 2).trimEnd();
-    lines = wrapLines(t, h).slice(0, 2);
-  }
-  return [lines.join(' '), h];
-}
-const field = (y, t, h, n = 1) => `^FO${TEXT_X},${y}^A0N,${h},${h}^FB${TEXT_W},${n},0,L,0^FD${t}^FS`;
-function label(payload, rows){
-  const out = ['^XA', '^PW280^LL160^LH0,0', `^FO12,17^BXN,7,200,18,18^FH_^FD${payload}^FS`];
-  for (const [y, raw, h, mode] of rows){
-    const t = clean(raw); if (!t) continue;
-    if (mode === 'desc'){
-      if (fits(t, 24)) out.push(field(y, t, 24));
-      else { const [tt, hh] = fitTwo(t, 17); out.push(field(y, tt, hh, 2)); }
-    } else { const [tt, hh] = fitOne(t, h); out.push(field(y, tt, hh)); }
-  }
-  out.push('^PQ1', '^XZ');
-  return out.join('');
-}
-function makerModel(r){ const mk = clean(r.Maker), md = clean(r.Model); return [mk, md.toUpperCase() === mk.toUpperCase() ? '' : md]; }
-function buildItemZpl(r){
-  const [mk, md] = makerModel(r);
-  return label(`${clean(r.Tag)}|1`, [[4, r.Bin, 26, 'one'], [32, mk, 16, 'one'], [50, md, 20, 'one'], [72, r.Group, 15, 'one'], [90, r.Description, 24, 'desc'], [128, r.Tag, 22, 'one']]);
-}
-// Never shorten a serial: drop the 'SN ' prefix if the full text won't fit at the smallest size.
-function serialText(sn){ sn = clean(sn); return fits('SN ' + sn, MIN_H) ? 'SN ' + sn : sn; }
-function buildSerialZpl(s, r){
-  const [mk, md] = makerModel(r);
-  return label(`${clean(r.Tag)}|1`, [[4, r.Bin, 26, 'one'], [32, [mk, md].filter(Boolean).join(' '), 16, 'one'], [50, serialText(s.Serial), 20, 'one'], [72, 'SERIALIZED', 15, 'one'], [90, r.Description, 24, 'desc'], [128, r.Tag, 22, 'one']]);
-}
-function fhEscape(s){ return clean(s).replace(/_/g, '_5F'); }
-function checkMeZpl(code){
-  const c = clean(code), mod = c.length > 40 ? 4 : 5;
-  const [t, h] = fits(c, 20) ? [c, 20] : fitTwo(c, 17);
-  const d = new Date(), date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  return ['^XA', '^PW280^LL160^LH0,0', `^FO12,17^BXN,${mod},200^FH_^FD${fhEscape(code)}^FS`,
-    field(4, 'CHECK ME', 26), field(40, t, h, fits(c, 20) ? 1 : 2), field(90, 'Not in V175 list', 15), field(128, date, 20), '^PQ1', '^XZ'].join('');
-}
-
 
 /* ---------------- layout files (in the repo, no inventory) ---------------- */
 async function loadLayout(){
@@ -274,6 +169,7 @@ async function loadLayout(){
     showErr('Could not read the layout files (layout/v175_bins.csv). Open this page from its GitHub Pages address, not by double-clicking the file.');
   }
 }
+
 
 /* ---------------- built-in .xlsx reader (no libraries, nothing leaves the browser) ---------------- */
 async function unzipXlsx(buf){
@@ -440,6 +336,7 @@ function restore(){
 }
 function showErr(t){ $('loadErr').hidden = !t; $('loadErr').textContent = t; }
 
+
 /* ---------------- unknown codes (kept in this browser) ---------------- */
 const ALIAS_KEY = 'v175-scan-station-unknown';
 let UNKNOWN = [];   // [{code, tag, seen}]
@@ -454,54 +351,6 @@ function renderUnknown(){
   $('unk').querySelectorAll('[data-ud]').forEach(b => b.onclick = () => { UNKNOWN.splice(+b.dataset.ud, 1); saveUnknown(); });
 }
 
-/* ---------------- batch ---------------- */
-const BATCH_KEY = 'v175-scan-station-batch';
-let BATCH = [];   // [{key, kind, bin, title, sub, zpl, copies}]
-function loadBatch(){ try { BATCH = JSON.parse(localStorage.getItem(BATCH_KEY) || '[]'); } catch (e) { BATCH = []; } }
-function saveBatch(){ try { localStorage.setItem(BATCH_KEY, JSON.stringify(BATCH)); } catch (e) {} renderBatch(); }
-function addToBatch(item, copies = 1){
-  const hit = BATCH.find(b => b.key === item.key);
-  if (hit) hit.copies = Math.min(99, hit.copies + copies);
-  else BATCH.push({...item, copies: Math.min(99, copies)});
-  saveBatch();
-  return hit ? hit.copies : copies;
-}
-const itemEntry = (t, s) => s
-  ? {key: 'S:' + s.Serial, kind: 'Serial', bin: t.Bin, title: t.Description, sub: `${t.Tag} · SN ${s.Serial}`, zpl: buildSerialZpl(s, t)}
-  : {key: 'M:' + t.Tag, kind: 'Item', bin: t.Bin, title: t.Description, sub: t.Tag, zpl: buildItemZpl(t)};
-const totalLabels = () => BATCH.filter(b => b.kind !== 'Setup').reduce((a, b) => a + b.copies, 0);
-function batchZpl(){
-  // Printer setup first, then every label; ^PQ1 per label, repeated for copies.
-  const order = [...BATCH.filter(b => b.kind === 'Setup'), ...BATCH.filter(b => b.kind !== 'Setup')];
-  return order.flatMap(b => Array(b.kind === 'Setup' ? 1 : b.copies).fill(b.zpl)).join('');
-}
-// One field per line (^FO ... ^FS kept together), each well under a printed line's width, so nothing wraps.
-const zplLines = z => z.replace(/(\^XA|\^FO|~)/g, '\n$1').replace(/\^XZ/g, '^XZ\n').replace(/\n{2,}/g, '\n').replace(/^\n/, '');
-function renderBatch(){
-  const n = totalLabels();
-  $('batchCount').textContent = n ? `${n} label${n > 1 ? 's' : ''}` : 'empty';
-  $('btnPrint').disabled = $('btnZpl').disabled = $('btnClear').disabled = !BATCH.length;
-  $('btnPrint').textContent = BATCH.length ? `Print batch (${n} label${n === 1 ? '' : 's'})` : 'Print batch';
-  $('batch').innerHTML = BATCH.length ? BATCH.map((b, i) => `<tr>
-      <td class="b">${esc(b.bin)}</td><td>${esc(b.title)}<span class="sub">${esc(b.sub)}</span></td><td>${esc(b.kind)}</td>
-      <td class="r">${b.kind === 'Setup' ? '1' : `<input type="number" class="qty" min="1" max="99" value="${b.copies}" data-q="${i}" aria-label="Copies">`}</td>
-      <td><button data-rm="${i}">Remove</button></td></tr>`).join('')
-    : '<tr><td colspan="5" style="color:var(--muted)">Scan parts to add their labels here, then print them all at once.</td></tr>';
-  $('batch').querySelectorAll('[data-q]').forEach(inp => inp.onchange = () => { BATCH[+inp.dataset.q].copies = Math.max(1, Math.min(99, +inp.value || 1)); saveBatch(); });
-  $('batch').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { BATCH.splice(+b.dataset.rm, 1); saveBatch(); $('scan').focus(); });
-}
-function printBatch(){
-  if (!BATCH.length) return;
-  $('printArea').textContent = zplLines(batchZpl());
-  window.print();
-}
-function downloadZpl(){
-  if (!BATCH.length) return;
-  const blob = new Blob([zplLines(batchZpl()).replace(/\n/g, '\r\n')], {type: 'text/plain'});
-  const d = new Date(), stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `V175-labels-${stamp}.zpl`;
-  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-}
 
 /* ---------------- scan handling ---------------- */
 function resolve(raw){
@@ -522,71 +371,53 @@ function resolve(raw){
   return {code: s, copies, hit};
 }
 
+
 let lastScan = '', lastAt = 0;
+const recent = [];
 function handle(raw){
-  const cmd = raw.trim().toUpperCase();
-  if (cmd === 'T') return addTest();
-  if (cmd === 'P') return printBatch();
   if (!raw.trim()) return;
   if (raw === lastScan && Date.now() - lastAt < 800) return;   // scanner double-send
   lastScan = raw; lastAt = Date.now();
-  if (!Object.keys(TAGS).length){ showNote('Load the inventory files first, then scan.'); $('load').hidden = false; return; }
-
+  if (!Object.keys(TAGS).length){ showMessage('Load the inventory files first', 'Then scan again.'); $('load').hidden = false; return; }
   const res = resolve(raw);
-  if (!res.hit){
-    beep(); logUnknown(res.code); showUnknown(res.code);
-    if ($('chk').checked){ addToBatch({key: 'U:' + res.code, kind: 'Check me', bin: '—', title: 'Unknown code', sub: res.code, zpl: checkMeZpl(res.code)}); setMsg('Added a CHECK ME label to the batch. Type the material # next to this code under Unknown codes, then rescan.', null); }
-    else setMsg('Listed under Unknown codes. Type the material # next to it, then rescan.', null);
-    return;
-  }
+  if (!res.hit){ beep(); logUnknown(res.code); showUnknown(res.code); return; }
   const {tag} = res.hit; let {serial} = res.hit;
   const sers = Object.values(SERIALS).filter(s => s.Tag === tag.Tag);
   if (!serial && sers.length === 1) serial = sers[0];
-  show(tag, serial, sers);
-  if (sers.length > 1 && !serial) return setMsg(`Serialized part with ${sers.length} units. Tap a serial to add its label, or scan the serial number.`, null);
-  const n = addToBatch(itemEntry(tag, serial), res.copies);
-  setMsg(`Added to batch${n > res.copies ? ` (now ${n} of this label)` : res.copies > 1 ? ` (${res.copies} labels)` : ''}.`, true);
-}
-function addTest(){
-  addToBatch({key: 'TEST', kind: 'Test', bin: 'D-A1-1', title: 'Test label', sub: '18000376', zpl: TEST_ZPL});
-  showNote('Test label added to the batch. Print the batch, then scan the label: it should show bin D-A1-1.');
-}
-function addSetup(){
-  addToBatch({key: 'SETUP', kind: 'Setup', bin: '—', title: 'Printer setup + calibrate', sub: '35x20 mm gap labels, direct thermal. Prints no label; feeds a few blanks while calibrating', zpl: SETUP_ZPL});
-  showNote('Printer setup added. It runs first when you print the batch: the printer feeds a few blank labels while it calibrates.');
+  show(tag, serial, sers.length);
+  remember(tag, serial);
 }
 
-/* ---------------- UI ---------------- */
+/* ---------------- display ---------------- */
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function binClass(b){ return b === 'NO BIN' ? 'bad' : b.startsWith('TOTE') ? 'tote' : /^(C-D[MR]|C-FLOOR|CF-)/.test(b) ? 'lock' : ''; }
-function show(t, serial, sers){
-  const others = (BYBIN[t.Bin] || []).filter(o => o.Tag !== t.Tag);
-  $('result').className = 'result'; $('result').hidden = false;
-  $('result').innerHTML = `
-    <div><div class="bigbin ${binClass(t.Bin)}">${esc(t.Bin)}</div><div class="binname">${esc(t.BinName)}</div><div class="where">${esc(t.Where)}</div></div>
-    <div>
-      <p class="desc">${esc(t.Description)}</p>
-      <dl><dt>Material</dt><dd class="m">${esc(t.Tag)}</dd>
-      ${t.Maker || t.Model ? `<dt>Maker / model</dt><dd>${esc([t.Maker, t.Model].filter(Boolean).join(' · '))}</dd>` : ''}
-      ${t.Group ? `<dt>Type</dt><dd>${esc(t.Group)}</dd>` : ''}${t.OnHand !== '' ? `<dt>On hand</dt><dd>${esc(t.OnHand)}</dd>` : ''}
-      ${serial ? `<dt>Serial</dt><dd class="m">${esc(serial.Serial)}</dd>` : ''}</dl>
-      ${sers.length > 1 ? `<div class="chips">${sers.map(s => `<button data-sn="${esc(s.Serial)}" class="${serial && serial.Serial === s.Serial ? 'cur' : ''}">${esc(s.Serial)}</button>`).join('')}</div>` : ''}
-      <div class="msg" id="msg"></div>
-      ${others.length && t.Bin !== 'NO BIN' ? `<div class="also">Also in <b>${esc(t.Bin)}</b>: ${others.slice(0, 12).map(o => esc(o.Description)).join(' · ')}${others.length > 12 ? ` · +${others.length - 12} more` : ''}</div>` : ''}
-    </div>`;
-  $('result').querySelectorAll('[data-sn]').forEach(b => b.onclick = () => {
-    const s = SERIALS[b.dataset.sn.toUpperCase()];
-    addToBatch(itemEntry(t, s));
-    show(t, s, sers); setMsg(`Added label for SN ${s.Serial} to the batch.`, true);
-    $('scan').focus();
-  });
+function zone(b){ return b === 'NO BIN' ? 'bad' : b.startsWith('TOTE') ? 'tote' : /^(C-D[MR]|C-FLOOR)/.test(b) ? 'lock' : 'bin'; }
+function show(t, serial, nSer){
+  const z = zone(t.Bin), others = (BYBIN[t.Bin] || []).filter(o => o.Tag !== t.Tag);
+  const ids = [`Material ${t.Tag}`, serial ? `SN ${serial.Serial}` : (nSer > 1 ? `${nSer} serialized units` : ''), t.OnHand !== '' ? `On hand ${t.OnHand}` : ''].filter(Boolean);
+  $('answer').className = 'answer ' + z;
+  $('answer').innerHTML = `
+    <div class="eyebrow">${z === 'tote' ? 'Green tote' : z === 'bad' ? 'No bin assigned' : 'Goes in'}</div>
+    <div class="bigbin">${esc(t.Bin)}</div>
+    <div class="binname">${esc(t.BinName || (t.Bin === 'NO BIN' ? 'Add it to layout/v175_bins.csv' : ''))}</div>
+    ${t.Where ? `<div class="where">${esc(t.Where)}</div>` : ''}
+    ${z === 'lock' ? '<div><span class="locked">Locked storage</span></div>' : ''}
+    <div class="part"><div class="desc">${esc(t.Description)}</div><div class="ids">${ids.map(esc).join(' · ')}</div></div>
+    ${others.length && z !== 'bad' ? `<div class="also">Also in <b>${esc(t.Bin)}</b>: ${others.slice(0, 10).map(o => esc(o.Description)).join(' · ')}${others.length > 10 ? ` · +${others.length - 10} more` : ''}</div>` : ''}`;
 }
 function showUnknown(code){
-  $('result').className = 'result unknown'; $('result').hidden = false;
-  $('result').innerHTML = `<div><div class="bigbin bad">NOT FOUND</div></div><div><p class="desc">${esc(code)}</p><div>This code isn't a material # or serial # in the loaded inventory.</div><div class="msg" id="msg"></div></div>`;
+  $('answer').className = 'answer bad';
+  $('answer').innerHTML = `<div class="eyebrow">Not in the loaded inventory</div><div class="bigbin">NOT FOUND</div>
+    <div class="part"><div class="desc">${esc(code)}</div><div class="ids">Listed under Unknown codes below</div></div>`;
 }
-function showNote(t){ $('result').className = 'result'; $('result').hidden = false; $('result').innerHTML = `<div class="desc" style="grid-column:1/-1">${esc(t)}</div>`; }
-function setMsg(t, ok){ const m = $('msg'); if (!m) return; m.textContent = t; m.className = 'msg ' + (ok === true ? 'ok' : ok === false ? 'bad' : ''); }
+function showMessage(big, small){ $('answer').className = 'answer'; $('answer').innerHTML = `<div class="idle">${esc(big)}<small>${esc(small)}</small></div>`; }
+function remember(t, serial){
+  const key = t.Tag + (serial ? '|' + serial.Serial : '');
+  const i = recent.findIndex(r => r.key === key); if (i >= 0) recent.splice(i, 1);
+  recent.unshift({key, t, serial}); recent.length = Math.min(recent.length, 10);
+  $('recentWrap').hidden = false;
+  $('recent').innerHTML = recent.map((r, i) => `<button data-r="${i}"><span class="rb">${esc(r.t.Bin)}</span><span class="rd">${esc(r.t.Description)}</span></button>`).join('');
+  $('recent').querySelectorAll('[data-r]').forEach(b => b.onclick = () => { const r = recent[+b.dataset.r]; show(r.t, r.serial, 0); $('scan').focus(); });
+}
 let actx;
 function beep(){
   try { actx ||= new (window.AudioContext || window.webkitAudioContext)();
@@ -596,32 +427,25 @@ function beep(){
 }
 
 $('scan').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Tab'){ e.preventDefault(); const v = e.target.value; e.target.value = ''; handle(v); } });
-$('btnTest').onclick = () => { addTest(); $('scan').focus(); };
-$('btnCal').onclick = () => { addSetup(); $('scan').focus(); };
-$('btnPrint').onclick = printBatch;
-$('btnZpl').onclick = downloadZpl;
-$('btnClear').onclick = () => {
-  if ($('btnClear').dataset.sure){ BATCH = []; saveBatch(); delete $('btnClear').dataset.sure; $('btnClear').textContent = 'Clear batch'; $('scan').focus(); return; }
-  $('btnClear').dataset.sure = '1'; $('btnClear').textContent = 'Click again to clear';
-  setTimeout(() => { delete $('btnClear').dataset.sure; $('btnClear').textContent = 'Clear batch'; }, 3000);
+$('btnFull').onclick = async () => {
+  try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); } catch (e) {}
+  $('scan').focus();
 };
-window.addEventListener('afterprint', () => { $('afterPrint').hidden = false; });
-$('btnDone').onclick = () => { BATCH = []; saveBatch(); $('afterPrint').hidden = true; $('scan').focus(); };
-$('btnKeep').onclick = () => { $('afterPrint').hidden = true; $('scan').focus(); };
+document.addEventListener('fullscreenchange', () => { $('btnFull').textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
 $('btnPick').onclick = () => $('files').click();
 $('files').onchange = e => { onFiles([...e.target.files]); e.target.value = ''; };
 $('btnHide').onclick = () => { $('load').hidden = true; $('scan').focus(); };
 $('van').onchange = () => { build(); save(); };
-const zone = $('load');
-['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); zone.hidden = false; zone.classList.add('drag'); }));
-['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('drag'); }));
+const zoneEl = $('load');
+['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); zoneEl.hidden = false; zoneEl.classList.add('drag'); }));
+['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); zoneEl.classList.remove('drag'); }));
 document.addEventListener('drop', e => { if (e.dataTransfer.files.length) onFiles([...e.dataTransfer.files]); });
-document.addEventListener('click', e => { if (!e.target.closest('button,input,label,.load,a')) $('scan').focus(); });
+document.addEventListener('click', e => { if (!e.target.closest('button,input,label,.load,a,table')) $('scan').focus(); });
 
 (async () => {
   await loadLayout();
   if (restore()){ build(); if (RAW.inv && RAW.ser) $('load').hidden = true; }
-  loadUnknown(); renderUnknown(); loadBatch(); renderBatch();
+  loadUnknown(); renderUnknown();
   $('scan').focus();
 })();
 </script>
