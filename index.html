@@ -60,6 +60,7 @@ button.primary{background:var(--bin);border-color:var(--bin);color:var(--panel)}
 .answer.bad{background:var(--bad-soft);border-color:var(--bad)}
 .eyebrow{font:600 clamp(16px,1.8vw,24px) var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .bigbin{font:700 clamp(56px,20vw,330px)/.88 var(--f-display);letter-spacing:.005em;margin:6px 0 4px;color:var(--bin);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bigbin.num{font-size:clamp(140px,30vw,420px)}
 .tote .bigbin{color:var(--tote)} .lock .bigbin{color:var(--lock)} .bad .bigbin{color:var(--bad);font-size:clamp(48px,13vw,200px)}
 .binname{font:700 clamp(28px,4vw,56px)/1.05 var(--f-display);text-transform:uppercase;letter-spacing:.02em}
 .where{font:500 clamp(18px,2vw,28px)/1.3 var(--f-body);color:var(--muted);margin-top:4px}
@@ -391,18 +392,19 @@ function handle(raw){
 /* ---------------- display ---------------- */
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function zone(b){ return b === 'NO BIN' ? 'bad' : b.startsWith('TOTE') ? 'tote' : /^(C-D[MR]|C-FLOOR)/.test(b) ? 'lock' : 'bin'; }
+const isNum = b => /^\d+$/.test(b);
 function show(t, serial, nSer){
   const z = zone(t.Bin), others = (BYBIN[t.Bin] || []).filter(o => o.Tag !== t.Tag);
   const ids = [`Material ${t.Tag}`, serial ? `SN ${serial.Serial}` : (nSer > 1 ? `${nSer} serialized units` : ''), t.OnHand !== '' ? `On hand ${t.OnHand}` : ''].filter(Boolean);
   $('answer').className = 'answer ' + z;
   $('answer').innerHTML = `
-    <div class="eyebrow">${z === 'tote' ? 'Green tote' : z === 'bad' ? 'No bin assigned' : 'Goes in'}</div>
-    <div class="bigbin">${esc(t.Bin)}</div>
+    <div class="eyebrow">${z === 'tote' ? 'Green tote' : z === 'bad' ? 'No bin assigned' : isNum(t.Bin) ? 'Goes in bin' : 'Goes in'}</div>
+    <div class="bigbin${isNum(t.Bin) ? ' num' : ''}">${esc(t.Bin)}</div>
     <div class="binname">${esc(t.BinName || (t.Bin === 'NO BIN' ? 'Add it to layout/v175_bins.csv' : ''))}</div>
     ${t.Where ? `<div class="where">${esc(t.Where)}</div>` : ''}
     ${z === 'lock' ? '<div><span class="locked">Locked storage</span></div>' : ''}
     <div class="part"><div class="desc">${esc(t.Description)}</div><div class="ids">${ids.map(esc).join(' · ')}</div></div>
-    ${others.length && z !== 'bad' ? `<div class="also">Also in <b>${esc(t.Bin)}</b>: ${others.slice(0, 10).map(o => esc(o.Description)).join(' · ')}${others.length > 10 ? ` · +${others.length - 10} more` : ''}</div>` : ''}`;
+    ${others.length && z !== 'bad' ? `<div class="also">Also in <b>${isNum(t.Bin) ? 'bin ' : ''}${esc(t.Bin)}</b>: ${others.slice(0, 10).map(o => esc(o.Description)).join(' · ')}${others.length > 10 ? ` · +${others.length - 10} more` : ''}</div>` : ''}`;
 }
 function showUnknown(code){
   $('answer').className = 'answer bad';
@@ -415,7 +417,7 @@ function remember(t, serial){
   const i = recent.findIndex(r => r.key === key); if (i >= 0) recent.splice(i, 1);
   recent.unshift({key, t, serial}); recent.length = Math.min(recent.length, 10);
   $('recentWrap').hidden = false;
-  $('recent').innerHTML = recent.map((r, i) => `<button data-r="${i}"><span class="rb">${esc(r.t.Bin)}</span><span class="rd">${esc(r.t.Description)}</span></button>`).join('');
+  $('recent').innerHTML = recent.map((r, i) => `<button data-r="${i}"><span class="rb">${isNum(r.t.Bin) ? 'Bin ' : ''}${esc(r.t.Bin)}</span><span class="rd">${esc(r.t.Description)}</span></button>`).join('');
   $('recent').querySelectorAll('[data-r]').forEach(b => b.onclick = () => { const r = recent[+b.dataset.r]; show(r.t, r.serial, 0); $('scan').focus(); });
 }
 let actx;

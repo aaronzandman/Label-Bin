@@ -1,6 +1,8 @@
 # V175 Bin Finder
 
 Scan a material number or serial number and the page shows, in very large type, which bin of van V175 it goes in.
+Parts are grouped by equipment model into **bins 1-30** (for example bin 1 = Lexmark MS725 / MS823). Serialized units keep
+their own spots (locked drawers, green totes, cargo floor).
 Nothing prints and nothing is installed.
 
 No inventory is stored in this repository. Each person loads their own SAP exports into the page,
@@ -12,8 +14,8 @@ you load new ones or click **Forget files on this computer**.
 | Path | What it is |
 |---|---|
 | `index.html` | The bin finder page |
-| `layout/v175_bins.csv` | Which bin each material number goes in, plus maker / model / part type |
-| `layout/v175_locations.csv` | Bin names and where each bin is in the van |
+| `layout/v175_bins.csv` | Which bin each material number goes in (1-30, or a spot code for serialized units), plus maker / model / equipment group |
+| `layout/v175_locations.csv` | What each bin holds (bins 1-30 and the serialized-unit spots) |
 
 The page reads the two layout files from the same site, so open it from a web address (for example GitHub Pages),
 not by double-clicking `index.html`.
@@ -32,8 +34,8 @@ The page tells you which file is which by its columns, so you can pick both at o
 
 1. Open the page and load the two files once.
 2. Click in the scan box (it stays selected) and scan, or type and press Enter.
-3. The bin fills the screen: blue for a shelf bin or drawer, green for a tote, amber for locked storage, red when
-   the code isn't found or the part has no bin yet. **Full screen** hides the browser's bars.
+3. The bin number fills the screen (blue). Serialized units show their spot instead: green for a tote, amber for
+   locked storage, blue for the cargo floor. Red means the code isn't found or the part has no bin yet. **Full screen** hides the browser's bars.
 
 | Scan or type | Shows |
 |---|---|
